@@ -1,17 +1,31 @@
 package session
 
 import (
+	"fmt"
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/nehachuha1/mynotes-project/pkg/abstractions"
+	"github.com/nehachuha1/mynotes-project/pkg/database/redisDB"
+	"github.com/nehachuha1/mynotes-project/pkg/services/config"
+	"strings"
 	"time"
 )
 
 type SessionManager struct {
+	sessionKey   string
+	jwtSecretKey []byte
+	RedisDB      redisDB.RedisDatabase
 	// TODO: добавить привязку к базе данных
 }
 
-func CreateNewToken(user abstractions.User, sessionID string) (string, error) {
+func NewSessionManager(cfg *config.Config) *SessionManager {
+	return &SessionManager{
+		sessionKey:   cfg.SessionConfig.SessionKey,
+		jwtSecretKey: []byte(cfg.SessionConfig.SessionKey),
+	}
+}
+
+func (sm *SessionManager) CreateNewToken(user *abstractions.User, sessionID string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user": map[string]interface{}{
 			"SessionID": sessionID,
@@ -20,7 +34,7 @@ func CreateNewToken(user abstractions.User, sessionID string) (string, error) {
 		"iat": time.Now().Unix(),
 		"exp": time.Now().Add(time.Hour * 24 * 3).Unix(),
 	})
-	newToken, err := token.SignedString(jwtSecretKey)
+	newToken, err := token.SignedString(sm.jwtSecretKey)
 	return "Bearer: " + newToken, err
 }
 
@@ -29,25 +43,49 @@ func (sm *SessionManager) CheckSession(c echo.Context) (*abstractions.Session, e
 	if err != nil {
 		return nil, NoSessionInCookie
 	}
-	tokenString := tokenWithCookie.Value
+	_, tokenString, ok := strings.Cut(tokenWithCookie.Value, "Bearer ")
+	if !ok {
+		return nil, fmt.Errorf("there's no prefix 'Bearer: ' in current token")
+	}
 	claims := jwt.MapClaims{}
 	_, err = jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
 		if t.Method != jwt.SigningMethodHS256 {
 			return nil, WrongJWTMethod
 		}
-		return jwtSecretKey, nil
+		return sm.jwtSecretKey, nil
 	})
 	if err != nil {
-		return nil, NoAuthError
+		return nil, fmt.Errorf("wrong signing method")
 	}
 	user, isOk := (claims["user"]).(map[string]interface{})
 	if !isOk {
-		return nil, NoAuthError
+		return nil, fmt.Errorf("impossible to parse map-field 'User'")
 	}
 	sessionID, isOk := (user["SessionID"]).(string)
 	if !isOk {
-		return nil, NoAuthError
+		return nil, fmt.Errorf("impossible to parse field 'SessionID'")
 	}
-	//	TODO: поход в Redis чтобы проверить актуален токен или нет
-	//  return currentSession, nil
+	username, isOk := (user["Username"]).(string)
+	if !isOk {
+		return nil, fmt.Errorf("impossible to parse field 'Username'")
+	}
+	userSession := &abstractions.Session{SessionID: sessionID, Username: username}
+	validSession, err := sm.RedisDB.CheckSession(userSession)
+	if err != nil {
+		return nil, fmt.Errorf("current session is not valid: %v", err)
+	}
+	return validSession, nil
+}
+
+func (sm *SessionManager) CreateSession(username string) (*abstractions.Session, error) {
+	newSession := sm.NewSession(username)
+	sessionWithID, err := sm.RedisDB.CreateSession(newSession)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create session: %v", err)
+	}
+	checkedSession, err := sm.RedisDB.CheckSession(sessionWithID)
+	if err != nil {
+		return nil, fmt.Errorf("can't check created session: %v", err)
+	}
+	return checkedSession, nil
 }
