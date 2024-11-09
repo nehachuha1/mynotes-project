@@ -3,6 +3,7 @@ package redisDB
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gomodule/redigo/redis"
 	"github.com/nehachuha1/mynotes-project/pkg/abstractions"
 	"github.com/nehachuha1/mynotes-project/pkg/services/config"
@@ -44,10 +45,10 @@ func (rdb *RedisDatabase) CreateSession(session *abstractions.Session) (*abstrac
 	result, err := redis.String(currentConnection.Do("SET", mKey, dataSerialized, "EX", 259200))
 
 	if err != nil {
-		return nil, CannotCreateSession
+		return nil, fmt.Errorf("cannot create session: %v", err)
 	}
 	if result != "OK" {
-		return nil, ResultIsNotOK
+		return nil, fmt.Errorf("redis.DO result is not okay: %v", err)
 	}
 	return session, nil
 }
@@ -57,12 +58,12 @@ func (rdb *RedisDatabase) CheckSession(session *abstractions.Session) (*abstract
 	currentConnection := rdb.RedisConnection.Get()
 	data, err := redis.Bytes(currentConnection.Do("GET", mKey))
 	if err != nil {
-		return nil, CantGetSessionWithKey
+		return nil, fmt.Errorf("can't get session with key: %v", err)
 	}
 	currentSession := &abstractions.Session{}
 	err = json.Unmarshal(data, currentSession)
 	if err != nil {
-		return nil, CantUnmarshalToSessionStruct
+		return nil, fmt.Errorf("can't unmarshal to session struct: %v", err)
 	}
 	return currentSession, nil
 }
@@ -72,7 +73,7 @@ func (rdb *RedisDatabase) DeleteSession(session *abstractions.Session) error {
 	currentConnection := rdb.RedisConnection.Get()
 	_, err := redis.Int(currentConnection.Do("DEL", mKey))
 	if err != nil {
-		return CantRemoveSession
+		return fmt.Errorf("can't delete session: %v", err)
 	}
 	return nil
 }

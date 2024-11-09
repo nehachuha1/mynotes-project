@@ -13,7 +13,7 @@ var (
 	NoAuthError        = errors.New("wrong token or impossible to parse field")
 )
 
-func (sm *SessionManager) NewSession(username string) *abstractions.Session {
+func (sm *SessionManager) newSession(username string) *abstractions.Session {
 	return &abstractions.Session{
 		Username: username,
 	}

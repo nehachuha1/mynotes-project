@@ -1,5 +1,7 @@
 syntax="proto3";
 
+//    protoc --go_out=. --go-grpc_out=. --go-grpc_opt=paths=source_relative --go_opt=paths=source_relative *.proto
+
 option go_package = "./;abstractions";
 
 package abstractions;
@@ -15,4 +17,15 @@ message User {
 message Session {
   string sessionID = 1;
   string username = 2;
+}
+
+message Result {
+  int64 code = 1;
+  string message = 2;
+}
+
+service AuthService {
+  rpc RegisterUser(User) returns (Result) {}
+  rpc AuthorizeUser(User) returns (Session) {}
+  rpc DeleteUser(User) returns (Result) {}
 }

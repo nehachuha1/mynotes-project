@@ -14,14 +14,14 @@ import (
 type SessionManager struct {
 	sessionKey   string
 	jwtSecretKey []byte
-	RedisDB      redisDB.RedisDatabase
-	// TODO: добавить привязку к базе данных
+	RedisDB      *redisDB.RedisDatabase
 }
 
 func NewSessionManager(cfg *config.Config) *SessionManager {
 	return &SessionManager{
 		sessionKey:   cfg.SessionConfig.SessionKey,
 		jwtSecretKey: []byte(cfg.SessionConfig.SessionKey),
+		RedisDB:      redisDB.NewRedisDatabase(cfg),
 	}
 }
 
@@ -78,7 +78,7 @@ func (sm *SessionManager) CheckSession(c echo.Context) (*abstractions.Session, e
 }
 
 func (sm *SessionManager) CreateSession(username string) (*abstractions.Session, error) {
-	newSession := sm.NewSession(username)
+	newSession := sm.newSession(username)
 	sessionWithID, err := sm.RedisDB.CreateSession(newSession)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create session: %v", err)
@@ -88,4 +88,20 @@ func (sm *SessionManager) CreateSession(username string) (*abstractions.Session,
 		return nil, fmt.Errorf("can't check created session: %v", err)
 	}
 	return checkedSession, nil
+}
+
+func (sm *SessionManager) DeleteSession(c echo.Context) error {
+	sessionFromContext, err := sm.SessionFromContext(c)
+	if err != nil {
+		return fmt.Errorf("can't get session from context: %v", err)
+	}
+	currentSession, err := sm.RedisDB.CheckSession(sessionFromContext)
+	if err != nil {
+		return fmt.Errorf("can't check session from context: %v", err)
+	}
+	err = sm.RedisDB.DeleteSession(currentSession)
+	if err != nil {
+		return fmt.Errorf("can't delete session with sessionID %v: %v", currentSession.SessionID, err)
+	}
+	return nil
 }
