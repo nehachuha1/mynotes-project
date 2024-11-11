@@ -14,6 +14,12 @@ message User {
   string telegram = 5;
 }
 
+message Registration {
+  int64 id = 1;
+  string username = 2;
+  string password = 3;
+}
+
 message Session {
   string sessionID = 1;
   string username = 2;
@@ -25,7 +31,8 @@ message Result {
 }
 
 service AuthService {
-  rpc RegisterUser(User) returns (Result) {}
-  rpc AuthorizeUser(User) returns (Session) {}
+  rpc CreateUser(User) returns (Result) {}
+  rpc RegisterUser(Registration) returns (Result) {}
+  rpc AuthorizeUser(Registration) returns (Registration) {}
   rpc DeleteUser(User) returns (Result) {}
 }

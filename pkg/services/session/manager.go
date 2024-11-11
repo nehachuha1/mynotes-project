@@ -7,6 +7,7 @@ import (
 	"github.com/nehachuha1/mynotes-project/pkg/abstractions"
 	"github.com/nehachuha1/mynotes-project/pkg/database/redisDB"
 	"github.com/nehachuha1/mynotes-project/pkg/services/config"
+	"go.uber.org/zap"
 	"strings"
 	"time"
 )
@@ -17,11 +18,11 @@ type SessionManager struct {
 	RedisDB      *redisDB.RedisDatabase
 }
 
-func NewSessionManager(cfg *config.Config) *SessionManager {
+func NewSessionManager(cfg *config.Config, logger *zap.SugaredLogger) *SessionManager {
 	return &SessionManager{
 		sessionKey:   cfg.SessionConfig.SessionKey,
 		jwtSecretKey: []byte(cfg.SessionConfig.SessionKey),
-		RedisDB:      redisDB.NewRedisDatabase(cfg),
+		RedisDB:      redisDB.NewRedisDatabase(cfg, logger),
 	}
 }
 

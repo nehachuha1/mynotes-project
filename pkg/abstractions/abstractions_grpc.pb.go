@@ -19,6 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	AuthService_CreateUser_FullMethodName    = "/abstractions.AuthService/CreateUser"
 	AuthService_RegisterUser_FullMethodName  = "/abstractions.AuthService/RegisterUser"
 	AuthService_AuthorizeUser_FullMethodName = "/abstractions.AuthService/AuthorizeUser"
 	AuthService_DeleteUser_FullMethodName    = "/abstractions.AuthService/DeleteUser"
@@ -28,8 +29,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthServiceClient interface {
-	RegisterUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*Result, error)
-	AuthorizeUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*Session, error)
+	CreateUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*Result, error)
+	RegisterUser(ctx context.Context, in *Registration, opts ...grpc.CallOption) (*Result, error)
+	AuthorizeUser(ctx context.Context, in *Registration, opts ...grpc.CallOption) (*Registration, error)
 	DeleteUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*Result, error)
 }
 
@@ -41,7 +43,17 @@ func NewAuthServiceClient(cc grpc.ClientConnInterface) AuthServiceClient {
 	return &authServiceClient{cc}
 }
 
-func (c *authServiceClient) RegisterUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*Result, error) {
+func (c *authServiceClient) CreateUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*Result, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Result)
+	err := c.cc.Invoke(ctx, AuthService_CreateUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) RegisterUser(ctx context.Context, in *Registration, opts ...grpc.CallOption) (*Result, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Result)
 	err := c.cc.Invoke(ctx, AuthService_RegisterUser_FullMethodName, in, out, cOpts...)
@@ -51,9 +63,9 @@ func (c *authServiceClient) RegisterUser(ctx context.Context, in *User, opts ...
 	return out, nil
 }
 
-func (c *authServiceClient) AuthorizeUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*Session, error) {
+func (c *authServiceClient) AuthorizeUser(ctx context.Context, in *Registration, opts ...grpc.CallOption) (*Registration, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Session)
+	out := new(Registration)
 	err := c.cc.Invoke(ctx, AuthService_AuthorizeUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -75,8 +87,9 @@ func (c *authServiceClient) DeleteUser(ctx context.Context, in *User, opts ...gr
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
 type AuthServiceServer interface {
-	RegisterUser(context.Context, *User) (*Result, error)
-	AuthorizeUser(context.Context, *User) (*Session, error)
+	CreateUser(context.Context, *User) (*Result, error)
+	RegisterUser(context.Context, *Registration) (*Result, error)
+	AuthorizeUser(context.Context, *Registration) (*Registration, error)
 	DeleteUser(context.Context, *User) (*Result, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
@@ -88,10 +101,13 @@ type AuthServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAuthServiceServer struct{}
 
-func (UnimplementedAuthServiceServer) RegisterUser(context.Context, *User) (*Result, error) {
+func (UnimplementedAuthServiceServer) CreateUser(context.Context, *User) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
+}
+func (UnimplementedAuthServiceServer) RegisterUser(context.Context, *Registration) (*Result, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterUser not implemented")
 }
-func (UnimplementedAuthServiceServer) AuthorizeUser(context.Context, *User) (*Session, error) {
+func (UnimplementedAuthServiceServer) AuthorizeUser(context.Context, *Registration) (*Registration, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AuthorizeUser not implemented")
 }
 func (UnimplementedAuthServiceServer) DeleteUser(context.Context, *User) (*Result, error) {
@@ -118,8 +134,26 @@ func RegisterAuthServiceServer(s grpc.ServiceRegistrar, srv AuthServiceServer) {
 	s.RegisterService(&AuthService_ServiceDesc, srv)
 }
 
-func _AuthService_RegisterUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(User)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).CreateUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_CreateUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).CreateUser(ctx, req.(*User))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_RegisterUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Registration)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -131,13 +165,13 @@ func _AuthService_RegisterUser_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: AuthService_RegisterUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).RegisterUser(ctx, req.(*User))
+		return srv.(AuthServiceServer).RegisterUser(ctx, req.(*Registration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _AuthService_AuthorizeUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(User)
+	in := new(Registration)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -149,7 +183,7 @@ func _AuthService_AuthorizeUser_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: AuthService_AuthorizeUser_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).AuthorizeUser(ctx, req.(*User))
+		return srv.(AuthServiceServer).AuthorizeUser(ctx, req.(*Registration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -179,6 +213,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "abstractions.AuthService",
 	HandlerType: (*AuthServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateUser",
+			Handler:    _AuthService_CreateUser_Handler,
+		},
 		{
 			MethodName: "RegisterUser",
 			Handler:    _AuthService_RegisterUser_Handler,
