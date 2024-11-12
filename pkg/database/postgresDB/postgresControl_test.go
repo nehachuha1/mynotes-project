@@ -25,7 +25,6 @@ func TestNewPostgresDB(t *testing.T) {
 	t.Logf("Database initialized: %v", pgDB)
 
 	newRegistration := &abstractions.Registration{
-		Id:       1,
 		Username: "testUsername",
 		Password: "testPassword",
 	}
@@ -34,7 +33,6 @@ func TestNewPostgresDB(t *testing.T) {
 		t.Fatalf("failed on RegisterUser: %v", err)
 	}
 	newUser := &abstractions.User{
-		Id:       1,
 		Username: "testUsername",
 		Email:    "test@test.com",
 		Initials: "test",
@@ -46,7 +44,6 @@ func TestNewPostgresDB(t *testing.T) {
 	}
 
 	userToAuthorize := &abstractions.Registration{
-		Id:       1,
 		Username: "testUsername",
 		Password: "",
 	}
@@ -59,4 +56,9 @@ func TestNewPostgresDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed on DeleteUser: %v", err)
 	}
+	err = pgDB.DeleteUser(newUser)
+	if err != nil {
+		t.Logf("can't delete user with error: %v", err)
+	}
+	t.Logf("successfully passed all tests")
 }

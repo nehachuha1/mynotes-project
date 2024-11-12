@@ -57,7 +57,7 @@ func TestNewUserRepository(t *testing.T) {
 	if err != nil {
 		t.Fatalf("User is not registered | Error: %v", err.Error())
 	}
-	t.Logf("User successfully registered | Code: %v | Message: %v",
+	t.Logf("User successfully registered | Code: %v | Message: %v\n",
 		result.Code, result.Message)
 
 	registration, err := userManager.AuthorizeUser(ctx, &abstractions.Registration{
@@ -69,5 +69,26 @@ func TestNewUserRepository(t *testing.T) {
 	}
 	t.Logf("User with ID %v and username %v successfully authorized | Password: %v",
 		registration.GetId(), registration.GetUsername(), registration.GetPassword())
-
+	result, err = userManager.CreateUser(ctx, &abstractions.User{
+		Username: "testUsername1",
+		Email:    "test@test.com",
+		Initials: "Test T.T.",
+		Telegram: "@test",
+	})
+	if err != nil {
+		t.Fatalf("Can't create user | Error: %v", err.Error())
+	}
+	t.Logf("Successfully created user in table 'relation_users' | Code: %v | Message: %v\n",
+		result.GetCode(), result.GetMessage())
+	result, err = userManager.DeleteUser(ctx, &abstractions.User{
+		Username: "testUsername1",
+		Email:    "test@test.com",
+		Initials: "Test T.T.",
+		Telegram: "@test",
+	})
+	if err != nil {
+		t.Fatalf("Can't delete user | Error: %v", err.Error())
+	}
+	t.Logf("Successfully created user in table 'relation_users' | Code: %v | Message: %v\n",
+		result.GetCode(), result.GetMessage())
 }

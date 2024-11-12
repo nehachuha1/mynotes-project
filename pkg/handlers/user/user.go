@@ -176,7 +176,7 @@ func (repo *UserRepository) DeleteUser(ctx context.Context, user *abstractions.U
 }
 
 func validateInputUser(user *abstractions.User) error {
-	if user.Id == 0 || user.Telegram == "" || user.Username == "" || user.Email == "" || user.Initials == "" {
+	if user.Telegram == "" || user.Username == "" || user.Email == "" || user.Initials == "" {
 		return ErrBadField
 	}
 	return nil

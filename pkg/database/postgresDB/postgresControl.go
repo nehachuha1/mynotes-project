@@ -59,13 +59,18 @@ func (pgdb *PostgresDatabase) RegisterUser(newRegistration *abstractions.Registr
 }
 
 func (pgdb *PostgresDatabase) CreateUser(user *abstractions.User) error {
+	foundUser := &RelationRegistration{}
+	result := pgdb.database.Table("relation_registrations").Where("username = ?", user.GetUsername()).First(foundUser)
+	if !errors.Is(result.Error, nil) {
+		return fmt.Errorf("can't find user in registrations")
+	}
 	currentUser := &RelationUser{
 		Username: user.GetUsername(),
 		Email:    user.GetEmail(),
 		Initials: user.GetInitials(),
 		Telegram: user.GetTelegram(),
 	}
-	result := pgdb.database.Create(currentUser)
+	result = pgdb.database.Create(currentUser)
 	if result.Error != nil {
 		pgdb.logger.Warnw("failed creating user in postgres control", "type", "postgres",
 			"output", result.Error, "time", time.Now().String())
@@ -99,7 +104,6 @@ func (pgdb *PostgresDatabase) AuthorizeUser(user *abstractions.Registration) (*a
 
 func (pgdb *PostgresDatabase) DeleteUser(user *abstractions.User) error {
 	userToDelete := &RelationUser{
-		Id:       user.GetId(),
 		Username: user.GetUsername(),
 		Email:    user.GetEmail(),
 		Initials: user.GetInitials(),
@@ -112,13 +116,20 @@ func (pgdb *PostgresDatabase) DeleteUser(user *abstractions.User) error {
 			"output", result.Error, "time", time.Now().String())
 		return fmt.Errorf("can't find user in database that could be deleted: %v", result.Error)
 	}
-	result = pgdb.database.Table("relation_users").Delete(RelationUser{}, checkedUser.Id)
+	result = pgdb.database.Table("relation_users").Delete(&RelationUser{}, checkedUser.Id)
 	if result.Error != nil {
 		pgdb.logger.Warnw("can't delete user in relation_user table", "type", "postgres",
 			"output", result.Error, "time", time.Now().String())
 		return fmt.Errorf("can't delete user in relation_user table: %v", result.Error)
 	}
-	result = pgdb.database.Table("relation_registrations").Delete(&RelationRegistration{}, checkedUser.Id)
+	registeredUser := &RelationRegistration{}
+	recordInRegistrations := pgdb.database.Table(
+		"relation_registrations").Where("username = ?", checkedUser.Username).First(registeredUser)
+	if recordInRegistrations.Error != nil {
+		return fmt.Errorf(
+			"user that should be deleted from registrations and users cannot be found in table 'registrations'")
+	}
+	result = pgdb.database.Table("relation_registrations").Delete(&RelationRegistration{}, registeredUser.Id)
 	if result.Error != nil {
 		pgdb.logger.Warnw("can't delete user in relation_registration table", "type", "postgres",
 			"output", result.Error, "time", time.Now().String())

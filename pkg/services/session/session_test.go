@@ -5,6 +5,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nehachuha1/mynotes-project/pkg/abstractions"
 	"github.com/nehachuha1/mynotes-project/pkg/services/config"
+	"go.uber.org/zap"
 	"testing"
 )
 
@@ -13,7 +14,10 @@ func TestSessionManager(t *testing.T) {
 		panic(fmt.Sprintf("can't load .env file: %v", err))
 	}
 	newConfig := config.NewConfig()
-	sessionManager := NewSessionManager(newConfig)
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	sugaredLogger := logger.Sugar()
+	sessionManager := NewSessionManager(newConfig, sugaredLogger)
 
 	//test1
 	user := abstractions.User{Username: "username"}
