@@ -59,8 +59,9 @@ func (pgdb *PostgresDatabase) RegisterUser(newRegistration *abstractions.Registr
 }
 
 func (pgdb *PostgresDatabase) CreateUser(user *abstractions.User) error {
-	foundUser := &RelationRegistration{}
-	result := pgdb.database.Table("relation_registrations").Where("username = ?", user.GetUsername()).First(foundUser)
+	foundRegistration := &RelationRegistration{}
+	result := pgdb.database.Table("relation_registrations").Where("username = ?", user.GetUsername()).First(
+		foundRegistration)
 	if !errors.Is(result.Error, nil) {
 		return fmt.Errorf("can't find user in registrations")
 	}
@@ -69,6 +70,14 @@ func (pgdb *PostgresDatabase) CreateUser(user *abstractions.User) error {
 		Email:    user.GetEmail(),
 		Initials: user.GetInitials(),
 		Telegram: user.GetTelegram(),
+	}
+	foundUser := &RelationUser{}
+	result = pgdb.database.Table("relation_users").Where("username = ?", user.GetUsername()).First(
+		foundUser)
+	if errors.Is(result.Error, nil) {
+		pgdb.logger.Warnw("failed creating user in postgres control", "type", "postgres",
+			"output", fmt.Errorf("user already exists in 'relation_users' database"), "time", time.Now().String())
+		return fmt.Errorf("user already exists in 'relation_users' database")
 	}
 	result = pgdb.database.Create(currentUser)
 	if result.Error != nil {

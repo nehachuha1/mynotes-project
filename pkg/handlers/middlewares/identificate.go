@@ -5,12 +5,14 @@ import (
 	"math/rand"
 )
 
-func Identificate(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		requestID := generateRequestID()
-		c.Set("RequestID", requestID)
-		_ = next(c)
-		return nil
+func IdentifyRequest() func(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			requestID := generateRequestID()
+			c.Set("RequestID", requestID)
+			_ = next(c)
+			return nil
+		}
 	}
 }
 

@@ -1,6 +1,7 @@
 package postgresDB
 
 import (
+	"errors"
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/nehachuha1/mynotes-project/pkg/abstractions"
@@ -24,6 +25,7 @@ func TestNewPostgresDB(t *testing.T) {
 	pgDB := NewPostgresDB(cfg, sugaredLogger)
 	t.Logf("Database initialized: %v", pgDB)
 
+	// basic tests
 	newRegistration := &abstractions.Registration{
 		Username: "testUsername",
 		Password: "testPassword",
@@ -60,5 +62,53 @@ func TestNewPostgresDB(t *testing.T) {
 	if err != nil {
 		t.Logf("can't delete user with error: %v", err)
 	}
-	t.Logf("successfully passed all tests")
+
+	// other tests
+	err = pgDB.RegisterUser(newRegistration)
+	if err != nil {
+		t.Fatalf("failed on RegisterUser: %v", err)
+	}
+	err = pgDB.RegisterUser(newRegistration)
+	if errors.Is(err, nil) {
+		t.Fatalf("registered user in database that should't be registered")
+	}
+	t.Log("RegisterUser tests passed")
+
+	err = pgDB.CreateUser(newUser)
+	if err != nil {
+		t.Fatalf("failed on CreateUser: %v", err)
+	}
+	err = pgDB.CreateUser(newUser)
+	if errors.Is(err, nil) {
+		t.Log("created user that shouldn't be created")
+	}
+	t.Log("CreateUser tests passed")
+
+	registeredUser, err = pgDB.AuthorizeUser(newRegistration)
+	if err != nil {
+		t.Fatalf("failed on AuthorizeUser: %v", err)
+	}
+	t.Logf("userToAuthorize: %#v | Authorized user: %#v", userToAuthorize, registeredUser)
+	registeredUser, err = pgDB.AuthorizeUser(&abstractions.Registration{
+		Username: "UserThatIsNotExists",
+		Password: "",
+	})
+	if errors.Is(err, nil) {
+		t.Fatalf("authorized not existing user")
+	}
+	t.Log("Authorize tests passed")
+
+	err = pgDB.DeleteUser(newUser)
+	if err != nil {
+		t.Fatalf("can't delete user with error: %v", err)
+	}
+	err = pgDB.DeleteUser(&abstractions.User{
+		Username: "UserThatIsNotExists",
+		Email:    "test@test.com",
+		Initials: "Test T.T.",
+		Telegram: "@test",
+	})
+	if errors.Is(err, nil) {
+		t.Fatalf("deleted user that is not exists")
+	}
 }

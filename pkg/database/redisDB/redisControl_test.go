@@ -5,6 +5,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nehachuha1/mynotes-project/pkg/abstractions"
 	"github.com/nehachuha1/mynotes-project/pkg/services/config"
+	"go.uber.org/zap"
 	"testing"
 )
 
@@ -13,8 +14,12 @@ func TestNewRedisDatabase(t *testing.T) {
 		panic(fmt.Sprintf("can't load .env file: %v", err))
 	}
 	newConfig := config.NewConfig()
-	newRedisDB := NewRedisDatabase(newConfig)
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	sugaredLogger := logger.Sugar()
+	newRedisDB := NewRedisDatabase(newConfig, sugaredLogger)
 
+	// basic tests
 	newConn := newRedisDB.RedisConnection.Get()
 	_, err := newConn.Do("SET", "test", "test")
 	if err != nil {
@@ -36,6 +41,7 @@ func TestNewRedisDatabase(t *testing.T) {
 		t.Fatalf("Error by deleting session: %v", err)
 	}
 
+	// other tests
 	sessionsToCreate := []*abstractions.Session{
 		{Username: "username1"},
 		{Username: "username2"},

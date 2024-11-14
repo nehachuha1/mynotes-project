@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/nehachuha1/mynotes-project/pkg/abstractions"
@@ -50,6 +51,7 @@ func TestNewUserRepository(t *testing.T) {
 	userManager := abstractions.NewAuthServiceClient(grpcConn)
 	ctx := context.Background()
 
+	// register block
 	result, err := userManager.RegisterUser(ctx, &abstractions.Registration{
 		Username: "testUsername1",
 		Password: "testPassword1",
@@ -59,7 +61,16 @@ func TestNewUserRepository(t *testing.T) {
 	}
 	t.Logf("User successfully registered | Code: %v | Message: %v\n",
 		result.Code, result.Message)
+	result, err = userManager.RegisterUser(ctx, &abstractions.Registration{
+		Username: "testUsername1",
+		Password: "testPassword1",
+	})
+	if errors.Is(err, nil) {
+		t.Fatal("User is registered but it shouldn't\n")
+	}
+	t.Log("RegisterUser method passed tests\n")
 
+	// authorize block
 	registration, err := userManager.AuthorizeUser(ctx, &abstractions.Registration{
 		Username: "testUsername1",
 		Password: "testPassword1",
@@ -67,8 +78,18 @@ func TestNewUserRepository(t *testing.T) {
 	if err != nil {
 		t.Fatalf("User is not authorized | Error: %v\n", err.Error())
 	}
-	t.Logf("User with ID %v and username %v successfully authorized | Password: %v",
+	t.Logf("User with ID %v and username %v successfully authorized | Password: %v\n",
 		registration.GetId(), registration.GetUsername(), registration.GetPassword())
+	registration, err = userManager.AuthorizeUser(ctx, &abstractions.Registration{
+		Username: "testUsername2",
+		Password: "testPassword2",
+	})
+	if errors.Is(err, nil) {
+		t.Fatalf("user is authorized but it shouldn't | Username: testUsername2")
+	}
+	t.Log("AuthorizeUser method passed tests\n")
+
+	// create user
 	result, err = userManager.CreateUser(ctx, &abstractions.User{
 		Username: "testUsername1",
 		Email:    "test@test.com",
@@ -76,10 +97,23 @@ func TestNewUserRepository(t *testing.T) {
 		Telegram: "@test",
 	})
 	if err != nil {
-		t.Fatalf("Can't create user | Error: %v", err.Error())
+		t.Fatalf("Can't create user | Error: %v\n", err.Error())
 	}
 	t.Logf("Successfully created user in table 'relation_users' | Code: %v | Message: %v\n",
 		result.GetCode(), result.GetMessage())
+
+	result, err = userManager.CreateUser(ctx, &abstractions.User{
+		Username: "userThatIsNotInDatabase",
+		Email:    "userThatIsNotInDatabase@mail.mail",
+		Initials: "User U.U.",
+		Telegram: "@username",
+	})
+	if errors.Is(err, nil) {
+		t.Fatalf("User that is not in database created but he shouldn't\n")
+	}
+	t.Log("CreateUser method passed tests\n")
+
+	// delete
 	result, err = userManager.DeleteUser(ctx, &abstractions.User{
 		Username: "testUsername1",
 		Email:    "test@test.com",
@@ -91,4 +125,15 @@ func TestNewUserRepository(t *testing.T) {
 	}
 	t.Logf("Successfully created user in table 'relation_users' | Code: %v | Message: %v\n",
 		result.GetCode(), result.GetMessage())
+	result, err = userManager.DeleteUser(ctx, &abstractions.User{
+		Username: "userThatIsNotInDatabase",
+		Email:    "userThatIsNotInDatabase@mail.mail",
+		Initials: "Test T.T.",
+		Telegram: "@test",
+	})
+	if errors.Is(err, nil) {
+		t.Log("User that is not in database is deleted but it shouldn't")
+	}
+
+	t.Log("DeleteUser method passed tests\n")
 }
