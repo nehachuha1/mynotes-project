@@ -24,13 +24,18 @@ func TestNewPostgresDB(t *testing.T) {
 	}
 	pgDB := NewPostgresDB(cfg, sugaredLogger)
 	t.Logf("Database initialized: %v", pgDB)
+	err := pgDB.MakeMigrations()
+	if err != nil {
+		t.Fatalf("error by making migrations")
+	}
+	t.Logf("Successfully made migrations")
 
 	// basic tests
 	newRegistration := &abstractions.Registration{
 		Username: "testUsername",
 		Password: "testPassword",
 	}
-	err := pgDB.RegisterUser(newRegistration)
+	err = pgDB.RegisterUser(newRegistration)
 	if err != nil {
 		t.Fatalf("failed on RegisterUser: %v", err)
 	}

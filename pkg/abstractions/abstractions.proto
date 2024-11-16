@@ -30,9 +30,54 @@ message Result {
   string message = 2;
 }
 
+message Workspace {
+  int64 id = 1;
+  string ownerUsername = 2;
+  bool isPrivate = 3;
+  repeated int64 notesID = 4;
+}
+
+message UserWorkspaces {
+  repeated Workspace istOfUserWorkspaces = 1;
+}
+
+message UserNotes {
+  repeated Note listOfUserNotes = 1;
+}
+
+message Note {
+  int64 id = 1;
+  int64 workspaceID = 2;
+  string ownerUsername = 3;
+  string noteText = 4;
+  bool isPrivate = 5;
+  repeated string tags = 6;
+  string createdAt = 7;
+  string lastEditedAt = 8;
+}
+
+message NoteID {
+  int64 noteID = 1;
+}
+
 service AuthService {
   rpc CreateUser(User) returns (Result) {}
   rpc RegisterUser(Registration) returns (Result) {}
   rpc AuthorizeUser(Registration) returns (Registration) {}
   rpc DeleteUser(User) returns (Result) {}
+}
+
+service WorkspaceService {
+  rpc GetUserWorkspaces(User) returns (UserWorkspaces) {}
+  rpc CreateWorkspace(User) returns (Result) {}
+  rpc DeleteWorkspace(Workspace) returns (Result) {}
+  rpc EditWorkspacePrivacy(Workspace) returns (Result) {}
+}
+
+service NoteService {
+  rpc GetUserNotes(User) returns (UserNotes) {}
+  rpc GetUserNote(NoteID) returns (Note) {}
+  rpc CreateNote(Note) returns (Result) {}
+  rpc DeleteNote(Note) returns (Result) {}
+  rpc EditNote(Note) returns (Result) {}
 }

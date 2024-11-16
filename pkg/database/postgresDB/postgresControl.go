@@ -148,3 +148,260 @@ func (pgdb *PostgresDatabase) DeleteUser(user *abstractions.User) error {
 		"output", "DELETED USER FROM POSTGRES", "time", time.Now().String())
 	return nil
 }
+
+func (pgdb *PostgresDatabase) GetUserWorkspaces(user *abstractions.User) ([]*abstractions.Workspace, error) {
+	var allWorkspaces []RelationWorkspace
+	result := pgdb.database.Table("relation_workspaces").Where(
+		"owner_username = ?", user.GetUsername()).Find(&allWorkspaces)
+	if result.Error != nil {
+		pgdb.logger.Warnw("can't find user workspaces in 'relation_workspaces'", "type", "postgres",
+			"output", result.Error, "time", time.Now().String())
+		return []*abstractions.Workspace{}, fmt.Errorf("can't find user workspaces in 'relation_workspaces': %v", result.Error)
+	}
+	toReturnWorkspaces := make([]*abstractions.Workspace, len(allWorkspaces))
+	for ind, ws := range allWorkspaces {
+		newWorkspace := &abstractions.Workspace{
+			Id:            ws.Id,
+			OwnerUsername: ws.OwnerUsername,
+			IsPrivate:     ws.IsPrivate,
+			NotesID:       ws.NotesID,
+		}
+		toReturnWorkspaces[ind] = newWorkspace
+	}
+	return toReturnWorkspaces, nil
+}
+
+func (pgdb *PostgresDatabase) CreateWorkspace(newWorkspace *abstractions.Workspace) (*abstractions.Workspace, error) {
+	validationErr := validateNewWorkspace(newWorkspace)
+	if validationErr != nil {
+		pgdb.logger.Warnw("no input owner username of workspace", "type", "postgres",
+			"output", validationErr.Error(), "time", time.Now().String())
+		return &abstractions.Workspace{}, validationErr
+	}
+	toCreateWorkspace := &RelationWorkspace{
+		OwnerUsername: newWorkspace.GetOwnerUsername(),
+		IsPrivate:     true,
+		NotesID:       make([]int64, 0),
+	}
+	result := pgdb.database.Table("relation_workspaces").Create(toCreateWorkspace)
+	if result.Error != nil {
+		pgdb.logger.Warnw("error by creating new workspace", "type", "postgres",
+			"output", result.Error, "time", time.Now().String())
+		return &abstractions.Workspace{}, result.Error
+	}
+	currentWorkspace := &RelationWorkspace{}
+	result = pgdb.database.Table("relation_workspaces").Where("owner_username = ?",
+		newWorkspace.GetOwnerUsername()).Order("id desc").First(currentWorkspace)
+	if result.Error != nil {
+		pgdb.logger.Warnw("can't find created workspace", "type", "postgres",
+			"output", result.Error, "time", time.Now().String())
+		return &abstractions.Workspace{}, fmt.Errorf("can't find created workspace: %v", result.Error)
+	}
+	createdWorkspace := &abstractions.Workspace{
+		Id:            currentWorkspace.Id,
+		OwnerUsername: currentWorkspace.OwnerUsername,
+		IsPrivate:     currentWorkspace.IsPrivate,
+		NotesID:       currentWorkspace.NotesID,
+	}
+	return createdWorkspace, nil
+}
+
+func (pgdb *PostgresDatabase) DeleteWorkspace(workspace *abstractions.Workspace) error {
+	err := validateExistingWorkspace(workspace)
+	if err != nil {
+		pgdb.logger.Warnw("error in validation workspace to delete", "type", "postgres",
+			"output", err.Error(), "time", time.Now().String())
+		return err
+	}
+	foundedWorkspace := &RelationWorkspace{}
+	result := pgdb.database.Table("relation_workspaces").Where(
+		"id = ?", workspace.Id).First(foundedWorkspace)
+	if result.Error != nil {
+		pgdb.logger.Warnw("can't find current workspace in the 'relation_workspaces'", "type", "postgres",
+			"output", result.Error, "time", time.Now().String())
+		return fmt.Errorf("can't find current workspace in the 'relation_workspaces: %v", result.Error)
+	}
+	result = pgdb.database.Table("relation_workspaces").Delete(&RelationWorkspace{}, foundedWorkspace.Id)
+	if result.Error != nil {
+		pgdb.logger.Warnw("can't delete current workspace from database 'relation_workspaces'",
+			"type", "postgres", "output", result.Error, "time", time.Now().String())
+		return fmt.Errorf("can't delete current workspace from database 'relation_workspaces': %v",
+			result.Error)
+	}
+	return nil
+}
+
+func (pgdb *PostgresDatabase) EditWorkspacePrivacy(workspace *abstractions.Workspace) error {
+	err := validateExistingWorkspace(workspace)
+	if err != nil {
+		pgdb.logger.Warnw("error in validation workspace to edit privacy policy", "type", "postgres",
+			"output", err.Error(), "time", time.Now().String())
+		return err
+	}
+	foundedWorkspace := &RelationWorkspace{}
+	result := pgdb.database.Table("relation_workspaces").Where(
+		"id = ?", workspace.Id).First(foundedWorkspace)
+	if result.Error != nil {
+		pgdb.logger.Warnw("can't update workspace privacy policy in 'relation_workspaces'",
+			"type", "postgres", "output", result.Error, "time", time.Now().String())
+		return fmt.Errorf("can't find current workspace in the 'relation_workspaces: %v", result.Error)
+	}
+	result = pgdb.database.Model(&RelationUser{}).Where(
+		"id = ?", foundedWorkspace.Id).Update("is_private", !foundedWorkspace.IsPrivate)
+	if result.Error != nil {
+		pgdb.logger.Warnw("can't update workspace privacy policy", "type", "postgres",
+			"output", result.Error, "time", time.Now().String())
+		return fmt.Errorf("error by updating privacy policy in 'relation_workspaces': %v",
+			result.Error)
+	}
+	return nil
+}
+
+func (pgdb *PostgresDatabase) GetUserNotes(user *abstractions.User) ([]*abstractions.Note, error) {
+	currentUser := &RelationUser{}
+	result := pgdb.database.Table("relation_users").Where(
+		"username = ?", user.GetUsername()).Find(currentUser)
+	if result.Error != nil {
+		pgdb.logger.Warnw("can't get user in 'relation_users'",
+			"type", "postgres", "output", result.Error, "time", time.Now().String())
+		return []*abstractions.Note{}, fmt.Errorf("can't get user in 'relation_users': %v", result.Error)
+	}
+	var allNotes []RelationNote
+	result = pgdb.database.Table("relation_notes").Where(
+		"owner_username = ?", currentUser.Username).Find(&allNotes)
+	if result.Error != nil {
+		pgdb.logger.Warnw("can't get user's notes in 'relation_notes'",
+			"type", "postgres", "output", result.Error, "time", time.Now().String())
+		return []*abstractions.Note{}, fmt.Errorf("can't get user's notes in 'relation_notes': %v", result.Error)
+	}
+	toReturnNotes := make([]*abstractions.Note, len(allNotes))
+	for ind, note := range allNotes {
+		toAddNote := &abstractions.Note{
+			Id:            note.Id,
+			WorkspaceID:   note.WorkspaceID,
+			OwnerUsername: note.OwnerUsername,
+			NoteText:      note.NoteText,
+			IsPrivate:     note.IsPrivate,
+			Tags:          note.Tags,
+			CreatedAt:     note.CreatedAt,
+			LastEditedAt:  note.LastEditedAt,
+		}
+		toReturnNotes[ind] = toAddNote
+	}
+	return toReturnNotes, nil
+}
+
+func (pgdb *PostgresDatabase) GetUserNote(noteID *abstractions.NoteID) (*abstractions.Note, error) {
+	currentNote := &RelationNote{}
+	result := pgdb.database.Table("relation_notes").Where(
+		"id = ?", noteID.GetNoteID()).First(&currentNote)
+	if result.Error != nil {
+		pgdb.logger.Warnw("can't get user note in 'relation_notes",
+			"type", "postgres", "output", result.Error, "time", time.Now().String())
+		return &abstractions.Note{}, fmt.Errorf("can't get user note in 'relation_notes: %v", result.Error)
+	}
+	toReturnNote := &abstractions.Note{
+		Id:            currentNote.Id,
+		WorkspaceID:   currentNote.WorkspaceID,
+		OwnerUsername: currentNote.OwnerUsername,
+		NoteText:      currentNote.NoteText,
+		IsPrivate:     currentNote.IsPrivate,
+		Tags:          currentNote.Tags,
+		CreatedAt:     currentNote.CreatedAt,
+		LastEditedAt:  currentNote.LastEditedAt,
+	}
+	return toReturnNote, nil
+}
+
+func (pgdb *PostgresDatabase) CreateNote(note *abstractions.Note) error {
+	err := validateNewNote(note)
+	if err != nil {
+		pgdb.logger.Warnw("error by validating new note",
+			"type", "postgres", "output", err.Error(), "time", time.Now().String())
+		return fmt.Errorf("error by validating new note: %v", err.Error())
+	}
+	newNote := &RelationNote{
+		WorkspaceID:   note.GetWorkspaceID(),
+		OwnerUsername: note.GetOwnerUsername(),
+		NoteText:      note.GetNoteText(),
+		IsPrivate:     note.GetIsPrivate(),
+		Tags:          note.GetTags(),
+		CreatedAt:     note.GetCreatedAt(),
+		LastEditedAt:  note.GetLastEditedAt(),
+	}
+	result := pgdb.database.Table("relation_notes").Create(newNote)
+	if result.Error != nil {
+		pgdb.logger.Warnw("failed on creating new note",
+			"type", "postgres", "output", result.Error, "time", time.Now().String())
+		return fmt.Errorf("failed on creating new note: %v", result.Error)
+	}
+	return nil
+}
+
+func (pgdb *PostgresDatabase) DeleteNote(note *abstractions.Note) error {
+	err := validateExistingNote(note)
+	if err != nil {
+		pgdb.logger.Warnw("failed on validating note to delete",
+			"type", "postgres", "output", err.Error(), "time", time.Now().String())
+		return fmt.Errorf("failed on validating note to delete: %v", err)
+	}
+	result := pgdb.database.Table("relation_notes").Delete(&RelationNote{}, note.Id)
+	if result.Error != nil {
+		pgdb.logger.Warnw("failed on deleting note",
+			"type", "postgres", "output", result.Error, "time", time.Now().String())
+		return fmt.Errorf("failed on deleting note: %v", result.Error)
+	}
+	return nil
+}
+
+func (pgdb *PostgresDatabase) EditNote(note *abstractions.Note) error {
+	existingNote := &RelationNote{}
+	result := pgdb.database.Table("relation_notes").Where("id = ?", note.GetId()).First(existingNote)
+	if result.Error != nil {
+		pgdb.logger.Warnw("failed on validating note to delete",
+			"type", "postgres", "output", result.Error, "time", time.Now().String())
+		return fmt.Errorf("failed on validating note to delete: %v", result.Error)
+	}
+	existingNote.NoteText = note.GetNoteText()
+	existingNote.IsPrivate = note.GetIsPrivate()
+	existingNote.Tags = note.GetTags()
+	existingNote.LastEditedAt = note.GetLastEditedAt()
+	result = pgdb.database.Table("relation_notes").Save(existingNote)
+	if result.Error != nil {
+		pgdb.logger.Warnw("failed on save edited note",
+			"type", "postgres", "output", result.Error, "time", time.Now().String())
+		return fmt.Errorf("failed on save edited note: %v", result.Error)
+	}
+	return nil
+}
+
+func validateExistingNote(note *abstractions.Note) error {
+	if note.GetId() == 0 || note.GetWorkspaceID() == 0 ||
+		note.GetOwnerUsername() == "" {
+		return fmt.Errorf("wrong field in input note")
+	}
+	return nil
+}
+
+func validateNewNote(note *abstractions.Note) error {
+	if note.GetWorkspaceID() == 0 || note.GetNoteText() == "" ||
+		note.GetOwnerUsername() == "" || note.GetCreatedAt() == "" ||
+		note.GetLastEditedAt() == "" {
+		return fmt.Errorf("wrong field of new note")
+	}
+	return nil
+}
+
+func validateNewWorkspace(ws *abstractions.Workspace) error {
+	if ws.GetOwnerUsername() == "" {
+		return fmt.Errorf("empty ownerUsername of workspace")
+	}
+	return nil
+}
+
+func validateExistingWorkspace(ws *abstractions.Workspace) error {
+	if ws.GetOwnerUsername() == "" || ws.GetId() == 0 {
+		return fmt.Errorf("empty ownerUsername or empty workspaceID")
+	}
+	return nil
+}

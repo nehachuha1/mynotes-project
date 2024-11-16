@@ -233,3 +233,473 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "abstractions.proto",
 }
+
+const (
+	WorkspaceService_GetUserWorkspaces_FullMethodName    = "/abstractions.WorkspaceService/GetUserWorkspaces"
+	WorkspaceService_CreateWorkspace_FullMethodName      = "/abstractions.WorkspaceService/CreateWorkspace"
+	WorkspaceService_DeleteWorkspace_FullMethodName      = "/abstractions.WorkspaceService/DeleteWorkspace"
+	WorkspaceService_EditWorkspacePrivacy_FullMethodName = "/abstractions.WorkspaceService/EditWorkspacePrivacy"
+)
+
+// WorkspaceServiceClient is the client API for WorkspaceService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type WorkspaceServiceClient interface {
+	GetUserWorkspaces(ctx context.Context, in *User, opts ...grpc.CallOption) (*UserWorkspaces, error)
+	CreateWorkspace(ctx context.Context, in *User, opts ...grpc.CallOption) (*Result, error)
+	DeleteWorkspace(ctx context.Context, in *Workspace, opts ...grpc.CallOption) (*Result, error)
+	EditWorkspacePrivacy(ctx context.Context, in *Workspace, opts ...grpc.CallOption) (*Result, error)
+}
+
+type workspaceServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewWorkspaceServiceClient(cc grpc.ClientConnInterface) WorkspaceServiceClient {
+	return &workspaceServiceClient{cc}
+}
+
+func (c *workspaceServiceClient) GetUserWorkspaces(ctx context.Context, in *User, opts ...grpc.CallOption) (*UserWorkspaces, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserWorkspaces)
+	err := c.cc.Invoke(ctx, WorkspaceService_GetUserWorkspaces_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) CreateWorkspace(ctx context.Context, in *User, opts ...grpc.CallOption) (*Result, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Result)
+	err := c.cc.Invoke(ctx, WorkspaceService_CreateWorkspace_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) DeleteWorkspace(ctx context.Context, in *Workspace, opts ...grpc.CallOption) (*Result, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Result)
+	err := c.cc.Invoke(ctx, WorkspaceService_DeleteWorkspace_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) EditWorkspacePrivacy(ctx context.Context, in *Workspace, opts ...grpc.CallOption) (*Result, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Result)
+	err := c.cc.Invoke(ctx, WorkspaceService_EditWorkspacePrivacy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// WorkspaceServiceServer is the server API for WorkspaceService service.
+// All implementations must embed UnimplementedWorkspaceServiceServer
+// for forward compatibility.
+type WorkspaceServiceServer interface {
+	GetUserWorkspaces(context.Context, *User) (*UserWorkspaces, error)
+	CreateWorkspace(context.Context, *User) (*Result, error)
+	DeleteWorkspace(context.Context, *Workspace) (*Result, error)
+	EditWorkspacePrivacy(context.Context, *Workspace) (*Result, error)
+	mustEmbedUnimplementedWorkspaceServiceServer()
+}
+
+// UnimplementedWorkspaceServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedWorkspaceServiceServer struct{}
+
+func (UnimplementedWorkspaceServiceServer) GetUserWorkspaces(context.Context, *User) (*UserWorkspaces, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserWorkspaces not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) CreateWorkspace(context.Context, *User) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateWorkspace not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) DeleteWorkspace(context.Context, *Workspace) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteWorkspace not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) EditWorkspacePrivacy(context.Context, *Workspace) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EditWorkspacePrivacy not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) mustEmbedUnimplementedWorkspaceServiceServer() {}
+func (UnimplementedWorkspaceServiceServer) testEmbeddedByValue()                          {}
+
+// UnsafeWorkspaceServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to WorkspaceServiceServer will
+// result in compilation errors.
+type UnsafeWorkspaceServiceServer interface {
+	mustEmbedUnimplementedWorkspaceServiceServer()
+}
+
+func RegisterWorkspaceServiceServer(s grpc.ServiceRegistrar, srv WorkspaceServiceServer) {
+	// If the following call pancis, it indicates UnimplementedWorkspaceServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&WorkspaceService_ServiceDesc, srv)
+}
+
+func _WorkspaceService_GetUserWorkspaces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(User)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).GetUserWorkspaces(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_GetUserWorkspaces_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).GetUserWorkspaces(ctx, req.(*User))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_CreateWorkspace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(User)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).CreateWorkspace(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_CreateWorkspace_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).CreateWorkspace(ctx, req.(*User))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_DeleteWorkspace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Workspace)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).DeleteWorkspace(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_DeleteWorkspace_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).DeleteWorkspace(ctx, req.(*Workspace))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_EditWorkspacePrivacy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Workspace)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).EditWorkspacePrivacy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_EditWorkspacePrivacy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).EditWorkspacePrivacy(ctx, req.(*Workspace))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// WorkspaceService_ServiceDesc is the grpc.ServiceDesc for WorkspaceService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var WorkspaceService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "abstractions.WorkspaceService",
+	HandlerType: (*WorkspaceServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetUserWorkspaces",
+			Handler:    _WorkspaceService_GetUserWorkspaces_Handler,
+		},
+		{
+			MethodName: "CreateWorkspace",
+			Handler:    _WorkspaceService_CreateWorkspace_Handler,
+		},
+		{
+			MethodName: "DeleteWorkspace",
+			Handler:    _WorkspaceService_DeleteWorkspace_Handler,
+		},
+		{
+			MethodName: "EditWorkspacePrivacy",
+			Handler:    _WorkspaceService_EditWorkspacePrivacy_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "abstractions.proto",
+}
+
+const (
+	NoteService_GetUserNotes_FullMethodName = "/abstractions.NoteService/GetUserNotes"
+	NoteService_GetUserNote_FullMethodName  = "/abstractions.NoteService/GetUserNote"
+	NoteService_CreateNote_FullMethodName   = "/abstractions.NoteService/CreateNote"
+	NoteService_DeleteNote_FullMethodName   = "/abstractions.NoteService/DeleteNote"
+	NoteService_EditNote_FullMethodName     = "/abstractions.NoteService/EditNote"
+)
+
+// NoteServiceClient is the client API for NoteService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type NoteServiceClient interface {
+	GetUserNotes(ctx context.Context, in *User, opts ...grpc.CallOption) (*UserNotes, error)
+	GetUserNote(ctx context.Context, in *NoteID, opts ...grpc.CallOption) (*Note, error)
+	CreateNote(ctx context.Context, in *Note, opts ...grpc.CallOption) (*Result, error)
+	DeleteNote(ctx context.Context, in *Note, opts ...grpc.CallOption) (*Result, error)
+	EditNote(ctx context.Context, in *Note, opts ...grpc.CallOption) (*Result, error)
+}
+
+type noteServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewNoteServiceClient(cc grpc.ClientConnInterface) NoteServiceClient {
+	return &noteServiceClient{cc}
+}
+
+func (c *noteServiceClient) GetUserNotes(ctx context.Context, in *User, opts ...grpc.CallOption) (*UserNotes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserNotes)
+	err := c.cc.Invoke(ctx, NoteService_GetUserNotes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *noteServiceClient) GetUserNote(ctx context.Context, in *NoteID, opts ...grpc.CallOption) (*Note, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Note)
+	err := c.cc.Invoke(ctx, NoteService_GetUserNote_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *noteServiceClient) CreateNote(ctx context.Context, in *Note, opts ...grpc.CallOption) (*Result, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Result)
+	err := c.cc.Invoke(ctx, NoteService_CreateNote_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *noteServiceClient) DeleteNote(ctx context.Context, in *Note, opts ...grpc.CallOption) (*Result, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Result)
+	err := c.cc.Invoke(ctx, NoteService_DeleteNote_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *noteServiceClient) EditNote(ctx context.Context, in *Note, opts ...grpc.CallOption) (*Result, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Result)
+	err := c.cc.Invoke(ctx, NoteService_EditNote_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// NoteServiceServer is the server API for NoteService service.
+// All implementations must embed UnimplementedNoteServiceServer
+// for forward compatibility.
+type NoteServiceServer interface {
+	GetUserNotes(context.Context, *User) (*UserNotes, error)
+	GetUserNote(context.Context, *NoteID) (*Note, error)
+	CreateNote(context.Context, *Note) (*Result, error)
+	DeleteNote(context.Context, *Note) (*Result, error)
+	EditNote(context.Context, *Note) (*Result, error)
+	mustEmbedUnimplementedNoteServiceServer()
+}
+
+// UnimplementedNoteServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedNoteServiceServer struct{}
+
+func (UnimplementedNoteServiceServer) GetUserNotes(context.Context, *User) (*UserNotes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserNotes not implemented")
+}
+func (UnimplementedNoteServiceServer) GetUserNote(context.Context, *NoteID) (*Note, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserNote not implemented")
+}
+func (UnimplementedNoteServiceServer) CreateNote(context.Context, *Note) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateNote not implemented")
+}
+func (UnimplementedNoteServiceServer) DeleteNote(context.Context, *Note) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteNote not implemented")
+}
+func (UnimplementedNoteServiceServer) EditNote(context.Context, *Note) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EditNote not implemented")
+}
+func (UnimplementedNoteServiceServer) mustEmbedUnimplementedNoteServiceServer() {}
+func (UnimplementedNoteServiceServer) testEmbeddedByValue()                     {}
+
+// UnsafeNoteServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to NoteServiceServer will
+// result in compilation errors.
+type UnsafeNoteServiceServer interface {
+	mustEmbedUnimplementedNoteServiceServer()
+}
+
+func RegisterNoteServiceServer(s grpc.ServiceRegistrar, srv NoteServiceServer) {
+	// If the following call pancis, it indicates UnimplementedNoteServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&NoteService_ServiceDesc, srv)
+}
+
+func _NoteService_GetUserNotes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(User)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NoteServiceServer).GetUserNotes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NoteService_GetUserNotes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NoteServiceServer).GetUserNotes(ctx, req.(*User))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NoteService_GetUserNote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NoteID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NoteServiceServer).GetUserNote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NoteService_GetUserNote_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NoteServiceServer).GetUserNote(ctx, req.(*NoteID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NoteService_CreateNote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Note)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NoteServiceServer).CreateNote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NoteService_CreateNote_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NoteServiceServer).CreateNote(ctx, req.(*Note))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NoteService_DeleteNote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Note)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NoteServiceServer).DeleteNote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NoteService_DeleteNote_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NoteServiceServer).DeleteNote(ctx, req.(*Note))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NoteService_EditNote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Note)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NoteServiceServer).EditNote(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NoteService_EditNote_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NoteServiceServer).EditNote(ctx, req.(*Note))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// NoteService_ServiceDesc is the grpc.ServiceDesc for NoteService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var NoteService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "abstractions.NoteService",
+	HandlerType: (*NoteServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetUserNotes",
+			Handler:    _NoteService_GetUserNotes_Handler,
+		},
+		{
+			MethodName: "GetUserNote",
+			Handler:    _NoteService_GetUserNote_Handler,
+		},
+		{
+			MethodName: "CreateNote",
+			Handler:    _NoteService_CreateNote_Handler,
+		},
+		{
+			MethodName: "DeleteNote",
+			Handler:    _NoteService_DeleteNote_Handler,
+		},
+		{
+			MethodName: "EditNote",
+			Handler:    _NoteService_EditNote_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "abstractions.proto",
+}
