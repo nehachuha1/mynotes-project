@@ -1,6 +1,6 @@
 package redisDB
 
-import "github.com/nehachuha1/mynotes-project/pkg/abstractions"
+import "github.com/nehachuha1/mynotes-project/internal/abstractions"
 
 type IRedisControl interface {
 	CreateSession(session *abstractions.Session) (*abstractions.Session, error)

@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/nehachuha1/mynotes-project/pkg/services/session"
+	"github.com/nehachuha1/mynotes-project/internal/services/session"
 )
 
 func Auth(sm *session.SessionManager) func(next echo.HandlerFunc) echo.HandlerFunc {

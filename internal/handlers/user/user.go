@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	argonpass "github.com/dwin/goArgonPass"
-	"github.com/nehachuha1/mynotes-project/pkg/abstractions"
+	"github.com/nehachuha1/mynotes-project/internal/abstractions"
 	"github.com/nehachuha1/mynotes-project/pkg/database/postgresDB"
 	"go.uber.org/zap"
 	"time"

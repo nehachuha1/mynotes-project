@@ -3,7 +3,7 @@ package session
 import (
 	"errors"
 	"github.com/labstack/echo/v4"
-	"github.com/nehachuha1/mynotes-project/pkg/abstractions"
+	"github.com/nehachuha1/mynotes-project/internal/abstractions"
 )
 
 var (

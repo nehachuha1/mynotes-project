@@ -1,6 +1,6 @@
 package postgresDB
 
-import "github.com/nehachuha1/mynotes-project/pkg/abstractions"
+import "github.com/nehachuha1/mynotes-project/internal/abstractions"
 
 type IPostgresRepo interface {
 	CreateUser(newUser *abstractions.User) error

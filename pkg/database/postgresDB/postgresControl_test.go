@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/nehachuha1/mynotes-project/pkg/abstractions"
-	"github.com/nehachuha1/mynotes-project/pkg/services/config"
+	"github.com/nehachuha1/mynotes-project/internal/abstractions"
+	"github.com/nehachuha1/mynotes-project/internal/config"
 	"go.uber.org/zap"
 	"testing"
 )
